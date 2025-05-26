@@ -109,8 +109,11 @@ if prompt:
             )
             res.raise_for_status()
             json_response = res.json()
-            # Si el json tiene 'response', úsalo; sino, todo el json
-            reply = render_agent_response(json_response.get("response", json_response))
+            # FIX: Si es dict y tiene 'response', úsalo; si no, usa todo
+            if isinstance(json_response, dict) and "response" in json_response:
+                reply = render_agent_response(json_response["response"])
+            else:
+                reply = render_agent_response(json_response)
         except Exception as e:
             reply = f"⚠️ Error al contactar con el agente: {e}"
 
