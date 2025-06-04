@@ -4,6 +4,8 @@ import requests
 import uuid
 import pandas as pd
 import base64
+import streamlit.components.v1 as components
+
 
 # Configuración de la página
 st.set_page_config(page_title="Agente Tronix", layout="wide", page_icon="🤖")
@@ -25,22 +27,33 @@ st.markdown("Bienvenido al panel de interacción con tu agente automatizado Tron
 
 # Función pro para mostrar cualquier respuesta
 def render_agent_response(resp):
-    # String
-    if isinstance(resp, str):
-        # Si es base64 de imagen
-        if resp.startswith("data:image") or resp.startswith("/9j/"):
-            try:
-                img_data = resp
-                if resp.startswith("/9j/"):  # Base64 "pura"
-                    img_data = f"data:image/png;base64,{resp}"
-                st.image(img_data)
-                return ""
-            except Exception:
-                return resp
-        # Si es URL, lo pone como enlace
-        if resp.startswith("http"):
-            return f"[{resp}]({resp})"
-        return resp
+   # String
+if isinstance(resp, str):
+    # 1️⃣ img base64
+    if resp.startswith("data:image") or resp.startswith("/9j/"):
+        try:
+            img_data = resp
+            if resp.startswith("/9j/"):
+                img_data = f"data:image/png;base64,{resp}"
+            st.image(img_data)
+            return ""
+        except Exception:
+            return resp
+
+    # 2️⃣ URL de gráfico interactivo
+    if resp.startswith("http") and "grafico_id=" in resp:
+        components.html(
+            f'<iframe src="{resp}" style="width:100%;height:520px;border:none;"></iframe>',
+            height=520
+        )
+        return ""  # ya lo mostramos como iframe
+
+    # 3️⃣ Cualquier otro enlace
+    if resp.startswith("http"):
+        return f"[{resp}]({resp})"
+
+    return resp
+
 
     # Lista
     if isinstance(resp, list):
