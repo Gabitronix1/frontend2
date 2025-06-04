@@ -39,6 +39,9 @@ def render_agent_response(resp):
                 return resp
         # Si es URL, lo pone como enlace
         if resp.startswith("http"):
+            # Si es un gráfico generado por el servidor → embebe con iframe
+            if "?grafico_id=" in resp:
+                return f'<iframe src="{resp}" width="100%" height="500px" frameborder="0" allowfullscreen></iframe>'
             return f"[{resp}]({resp})"
         return resp
 
