@@ -27,61 +27,73 @@ st.markdown("Bienvenido al panel de interacción con tu agente automatizado Tron
 
 # Función pro para mostrar cualquier respuesta
 def render_agent_response(resp):
-        """Renderiza adecuadamente la respuesta del agente en Streamlit."""
-        # Intenta parsear JSON desde string
-        if isinstance(resp, str):
+    """
+    Renderiza adecuadamente la respuesta del agente en Streamlit.
+
+    Maneja:
+    - Imágenes base-64
+    - URLs de gráficos (?grafico_id=…)  → iframe
+    - Otras URLs                        → enlace
+    - Diccionarios / listas             → pretty-print JSON
+    - Respuestas tipo [{"output": "..."}]
+    """
+    # ───────────────────────── 1) intentar parsear JSON ─────────────────────────
+    if isinstance(resp, str):
+        try:
+            resp = json.loads(resp)
+        except Exception:
+            pass  # no era JSON válido, seguimos con string
+
+    # ─────────────────── 2) lista [{"output": "..."}] ──────────────────────────
+    if (
+        isinstance(resp, list)
+        and resp
+        and isinstance(resp[0], dict)
+        and "output" in resp[0]
+    ):
+        resp = resp[0]["output"]
+
+    # ───────────────────────────── 3) STRINGS ──────────────────────────────────
+    if isinstance(resp, str):
+        # Imagen base-64
+        if resp.startswith("data:image") or resp.startswith("/9j/"):
             try:
-                parsed = json.loads(resp)
-                resp = parsed
-            except Exception:
-                pass  # no era JSON
-
-        # Caso lista con {"output": ...}
-        if isinstance(resp, list) and resp and isinstance(resp[0], dict) and "output" in resp[0]:
-            resp = resp[0]["output"]
-
-        # ----- STRING -----
-        if isinstance(resp, str):
-            # Imagen base64
-            if resp.startswith("data:image") or resp.startswith("/9j/"):
-                try:
-                    img_data = resp if resp.startswith("data:image") else f"data:image/png;base64,{resp}"
-                    st.image(img_data)
-                    return ""
-                except Exception:
-                    return resp
-
-            # URL de gráfico
-            if resp.startswith("http") and "grafico_id=" in resp:
-                components.html(
-                    f'<iframe src="{resp}" style="width:100%;height:520px;border:none;"></iframe>',
-                    height=520,
+                img_data = (
+                    resp
+                    if resp.startswith("data:image")
+                    else f"data:image/png;base64,{resp}"
                 )
+                st.image(img_data)
                 return ""
+            except Exception:
+                return resp
 
-            # Otra URL
-            if resp.startswith("http"):
-                return f"[{resp}]({resp})"
+        # URL de gráfico interactivo
+        if resp.startswith("http") and "grafico_id=" in resp:
+            components.html(
+                f'<iframe src="{resp}" style="width:100%;height:520px;border:none;"></iframe>',
+                height=520,
+            )
+            return ""
 
-            return resp
+        # Cualquier otra URL
+        if resp.startswith("http"):
+            return f"[{resp}]({resp})"
 
-        # ----- DICT / LIST -----
-        if isinstance(resp, (dict, list)):
-            pretty = json.dumps(resp, indent=2, ensure_ascii=False)
-            return f"""```json
+        return resp
+
+    # ────────────────── 4) OBJETOS / LISTAS → pretty JSON ─────────────────────
+    if isinstance(resp, (dict, list)):
+        pretty = json.dumps(resp, indent=2, ensure_ascii=False)
+        return f"""```json
 {pretty}
 ```"""
 
-        # Otro tipo
-        return str(resp)
+    # ───────────────────────────── 5) fallback ─────────────────────────────────
+    return str(resp)
 
-    Maneja:
-    - Imágenes base64
-    - URLs de gráficos (?grafico_id=) → iframe
-    - Otras URLs → link
-    - Objetos / listas JSON → pretty
-    - Respuestas del agente envolvidas como [{"output": "..."}]
-    """
+
+    
     # Intenta convertir strings JSON en objetos Python
     if isinstance(resp, str):
         try:
