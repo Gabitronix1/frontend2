@@ -43,7 +43,7 @@ def render_agent_response(resp):
         if resp.startswith("http"):
             # Si apunta a tu servicio de gráficos, embébelo
             if "?grafico_id=" in resp:
-                return f'<iframe src="{resp}" height="620" width="100%" frameborder="0"></iframe>'
+                return f"""<iframe src="{resp}" height="620" width="100%" frameborder="0" allowfullscreen></iframe>"""
             # Cualquier otro link se mantiene como enlace
             return f"[{resp}]({resp})"
         return resp
