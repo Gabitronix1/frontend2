@@ -93,7 +93,10 @@ def render_agent_response(resp):
 # Mostrar historial de conversación
 for msg in st.session_state.chat_history:
     with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+        if "rendered" in msg:
+            st.markdown(msg["rendered"], unsafe_allow_html=True)
+        else:
+            st.markdown(render_agent_response(msg["content"]), unsafe_allow_html=True)
 
 # Captura de entrada del usuario
 prompt = st.chat_input("Escribe tu mensaje aquí...")
@@ -125,7 +128,7 @@ if prompt:
             reply = f"⚠️ Error al contactar con el agente: {e}"
 
     # Mostrar respuesta del agente
-    st.session_state.chat_history.append({"role": "assistant", "content": original_reply})
+    st.session_state.chat_history.append({"role": "assistant", "original": original_reply, "rendered": rendered_reply})
     with st.chat_message("assistant"):
         st.markdown(rendered_reply, unsafe_allow_html=True)
 
