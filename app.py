@@ -29,23 +29,23 @@ st.markdown("Bienvenido al panel de interacción con tu agente automatizado Tron
 def render_agent_response(resp):
     # String
     if isinstance(resp, str):
-        # Si es base64 de imagen
-        if resp.startswith("data:image") or resp.startswith("/9j/"):
-            try:
-                img_data = resp
-                if resp.startswith("/9j/"):  # Base64 "pura"
-                    img_data = f"data:image/png;base64,{resp}"
-                st.image(img_data)
-                return ""
-            except Exception:
-                return resp
-        # Si es URL, lo pone como enlace
+        # Si contiene markdown con grafico_id → convertir en iframe
+        if "!(" in resp and "?grafico_id=" in resp:
+            import re
+            match = re.search(r"\((https://[^\)]+grafico_id=[^\)]+)\)", resp)
+            if match:
+                url = match.group(1)
+                return f'''<iframe src="{url}" height="620" width="100%" frameborder="0" allowfullscreen></iframe>'''
+
+        # Si es un link plano con grafico_id → también embebe
+        if resp.startswith("http") and "?grafico_id=" in resp:
+            return f'''<iframe src="{resp}" height="620" width="100%" frameborder="0" allowfullscreen></iframe>'''
+
+        # Otros links normales
         if resp.startswith("http"):
-            # Si apunta a tu servicio de gráficos, embébelo
-            if "?grafico_id=" in resp:
-                return f"""<iframe src="{resp}" height="620" width="100%" frameborder="0" allowfullscreen></iframe>"""
-            # Cualquier otro link se mantiene como enlace
             return f"[{resp}]({resp})"
+
+        # Si es texto plano
         return resp
 
     # Lista
