@@ -118,16 +118,17 @@ if prompt:
             json_response = res.json()
             # FIX: Si es dict y tiene 'response', úsalo; si no, usa todo
             if isinstance(json_response, dict) and "response" in json_response:
-                reply = render_agent_response(json_response["response"])
+                original_reply = json_response["response"]
             else:
-                reply = render_agent_response(json_response)
+                original_reply = json_response
+            rendered_reply = render_agent_response(original_reply)
         except Exception as e:
             reply = f"⚠️ Error al contactar con el agente: {e}"
 
     # Mostrar respuesta del agente
-    st.session_state.chat_history.append({"role": "assistant", "content": reply})
+    st.session_state.chat_history.append({"role": "assistant", "content": original_reply})
     with st.chat_message("assistant"):
-        st.markdown(reply, unsafe_allow_html=True)
+        st.markdown(rendered_reply, unsafe_allow_html=True)
 
 # Panel lateral con opciones
 st.sidebar.title("Opciones")
