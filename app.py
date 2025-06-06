@@ -4,6 +4,8 @@ import requests
 import uuid
 import pandas as pd
 import base64
+import streamlit.components.v1 as components  # ← NUEVO
+
 
 # Configuración de la página
 st.set_page_config(page_title="Agente Tronix", layout="wide", page_icon="🤖")
@@ -39,6 +41,11 @@ def render_agent_response(resp):
                 return resp
         # Si es URL, lo pone como enlace
         if resp.startswith("http"):
+            # Si apunta a tu servicio de gráficos, embébelo
+            if "?grafico_id=" in resp:
+                components.iframe(resp, height=620, width="100%")
+                return ""
+            # Cualquier otro link se mantiene como enlace
             return f"[{resp}]({resp})"
         return resp
 
