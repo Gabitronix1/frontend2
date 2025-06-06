@@ -27,15 +27,15 @@ st.markdown("Bienvenido al panel de interacción con tu agente automatizado Tron
 
 # Función pro para mostrar cualquier respuesta
 def render_agent_response(resp):
-    # String
-    if "!(" in resp and "?grafico_id=" in resp:
-    start = resp.find("(")
-    end = resp.find(")", start)
-    if start != -1 and end != -1:
-        url = resp[start+1:end]
-        if "?grafico_id=" in url:
-            return f'''<iframe src="{url}" height="620" width="100%" frameborder="0" allowfullscreen></iframe>'''
-
+    if isinstance(resp, str):
+        # Si contiene markdown con grafico_id → convertir en iframe
+        if "!(" in resp and "?grafico_id=" in resp:
+            start = resp.find("(")
+            end = resp.find(")", start)
+            if start != -1 and end != -1:
+                url = resp[start+1:end]
+                if "?grafico_id=" in url:
+                    return f'''<iframe src="{url}" height="620" width="100%" frameborder="0" allowfullscreen></iframe>'''
 
         # Si es un link plano con grafico_id → también embebe
         if resp.startswith("http") and "?grafico_id=" in resp:
@@ -47,6 +47,7 @@ def render_agent_response(resp):
 
         # Si es texto plano
         return resp
+
 
     # Lista
     if isinstance(resp, list):
