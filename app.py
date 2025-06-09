@@ -34,7 +34,7 @@ st.markdown("## 📊 Comparativa Producción vs Proyección - Teams")
 @st.cache_data
 def cargar_datos():
     supabase = get_client()
-    data = supabase.table("vista_comparativa_team_largo").select("*").execute()
+    data = supabase.table("comparativa_produccion_teams").select("*").execute()
     return pd.DataFrame(data.data)
 
 df = cargar_datos()
