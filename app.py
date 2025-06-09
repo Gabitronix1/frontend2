@@ -32,7 +32,7 @@ import plotly.express as px
 st.subheader("📊 Panel Predictivo Tronix")
 
 supabase = get_client()
-data = supabase.table("vista_comparativa_despachos").select("*").execute().data
+data = supabase.table("comparativa_despachos").select("*").execute().data
 df = pd.DataFrame(data)
 
 if not df.empty:
