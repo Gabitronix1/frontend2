@@ -26,6 +26,8 @@ st.title("🤖 Agente Tronix")
 st.markdown("Bienvenido al panel de interacción con tu agente automatizado Tronix. Utiliza el campo inferior para enviar mensajes.")
 
 # 🚀 Dashboard comparativo Producción vs Proyección
+from supabase_client import get_client
+import plotly.express as px
 st.markdown("## 📊 Comparativa Producción vs Proyección - Teams")
 
 # 🔄 Cargar datos desde la vista
