@@ -106,22 +106,43 @@ else:
 
 # Función pro para mostrar cualquier respuesta
 def render_agent_response(resp):
+    import re
+
+    # 🧩 Si es lista, renderizamos cada bloque ordenadamente
+    if isinstance(resp, list):
+        rendered = ""
+        for item in resp:
+            if isinstance(item, dict) and "output" in item:
+                rendered += render_agent_response(item["output"]) + "\n\n"
+            elif isinstance(item, str):
+                rendered += render_agent_response(item) + "\n\n"
+        return rendered
+
+    # 🧩 Si es string (texto plano o markdown)
     if isinstance(resp, str):
-        # 🔍 Busca link de grafico_id dentro de markdown tipo ![]()
-        import re
+        # Detectar ![](...) con grafico_id
         match = re.search(r"!\[.*?\]\((https://[^\s\)]+grafico_id=[^\s\)]+)\)", resp)
         if match:
             url = match.group(1).strip()
             return f'''<iframe src="{url}" height="620" width="100%" frameborder="0" allowfullscreen></iframe>'''
 
-        # 🔁 También detecta link plano
+        # Detectar link directo con grafico_id
         if resp.startswith("http") and "?grafico_id=" in resp:
             return f'''<iframe src="{resp.strip()}" height="620" width="100%" frameborder="0" allowfullscreen></iframe>'''
 
+        # Link común
         if resp.startswith("http"):
             return f"[{resp}]({resp})"
 
+        # Texto plano
         return resp
+
+    # Si es dict con output
+    if isinstance(resp, dict) and "output" in resp:
+        return render_agent_response(resp["output"])
+
+    return str(resp)
+
 
 
 
