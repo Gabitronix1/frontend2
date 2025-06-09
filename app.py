@@ -118,7 +118,7 @@ def render_agent_response(resp):
                 rendered += render_agent_response(item) + "\n\n"
         return rendered
 
-    # 🧩 Si es string (texto plano o markdown)
+    # 🧩 Si es string (texto plano, markdown o HTML)
     if isinstance(resp, str):
         # Detectar ![](...) con grafico_id
         match = re.search(r"!\[.*?\]\((https://[^\s\)]+grafico_id=[^\s\)]+)\)", resp)
@@ -129,6 +129,10 @@ def render_agent_response(resp):
         # Detectar link directo con grafico_id
         if resp.startswith("http") and "?grafico_id=" in resp:
             return f'''<iframe src="{resp.strip()}" height="620" width="100%" frameborder="0" allowfullscreen></iframe>'''
+
+        # Detectar iframe directo
+        if "<iframe" in resp and "</iframe>" in resp:
+            return resp  # ← esto sí lo va a renderizar como HTML en el markdown
 
         # Link común
         if resp.startswith("http"):
