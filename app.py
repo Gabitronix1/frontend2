@@ -106,46 +106,67 @@ else:
 
 # Función pro para mostrar cualquier respuesta
 def render_agent_response(resp):
-    import re
-
-    # 🧩 Si es lista, renderizamos cada bloque ordenadamente
-    if isinstance(resp, list):
-        rendered = ""
-        for item in resp:
-            if isinstance(item, dict) and "output" in item:
-                rendered += render_agent_response(item["output"]) + "\n\n"
-            elif isinstance(item, str):
-                rendered += render_agent_response(item) + "\n\n"
-        return rendered
-
-    # 🧩 Si es string (texto plano, markdown o HTML)
     if isinstance(resp, str):
-        # Detectar ![](...) con grafico_id
+        # 🔍 Busca link de grafico_id dentro de markdown tipo ![]()
+        import re
         match = re.search(r"!\[.*?\]\((https://[^\s\)]+grafico_id=[^\s\)]+)\)", resp)
         if match:
             url = match.group(1).strip()
             return f'''<iframe src="{url}" height="620" width="100%" frameborder="0" allowfullscreen></iframe>'''
 
-        # Detectar link directo con grafico_id
+        # 🔁 También detecta link plano
         if resp.startswith("http") and "?grafico_id=" in resp:
             return f'''<iframe src="{resp.strip()}" height="620" width="100%" frameborder="0" allowfullscreen></iframe>'''
 
-        # Detectar iframe directo
-        if "<iframe" in resp and "</iframe>" in resp:
-            return resp  # ← esto sí lo va a renderizar como HTML en el markdown
-
-        # Link común
         if resp.startswith("http"):
             return f"[{resp}]({resp})"
 
-        # Texto plano
         return resp
 
-    # Si es dict con output
-    if isinstance(resp, dict) and "output" in resp:
-        return render_agent_response(resp["output"])
 
+
+    # Lista
+    if isinstance(resp, list):
+        rendered = ""
+        for idx, item in enumerate(resp):
+            rendered += f"**{idx+1}.** {render_agent_response(item)}\n\n"
+        return rendered
+
+    # Diccionario
+    if isinstance(resp, dict):
+        rendered = ""
+        # Si trae tabla en formato estándar
+        if "table" in resp and isinstance(resp["table"], (list, dict)):
+            try:
+                df = pd.DataFrame(resp["table"])
+                rendered += "#### Tabla de resultados\n"
+                rendered += df.to_markdown(index=False)
+            except Exception:
+                rendered += str(resp["table"])
+        # Si trae imagen en base64
+        elif "image" in resp:
+            try:
+                img = resp["image"]
+                if not img.startswith("data:image"):
+                    img = f"data:image/png;base64,{img}"
+                st.image(img)
+                rendered += ""
+            except Exception:
+                rendered += "(No se pudo renderizar imagen)"
+        # Texto
+        if "text" in resp:
+            rendered += f"\n\n{resp['text']}"
+        # Otros campos
+        for k, v in resp.items():
+            if k not in {"table", "image", "text"}:
+                rendered += f"\n**{k.capitalize()}:** {render_agent_response(v)}"
+        if rendered.strip() == "":
+            rendered = str(resp)
+        return rendered
+
+    # Otros tipos
     return str(resp)
+
 
 
 
