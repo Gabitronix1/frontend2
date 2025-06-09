@@ -25,6 +25,48 @@ if "session_id" not in st.session_state:
 st.title("🤖 Agente Tronix")
 st.markdown("Bienvenido al panel de interacción con tu agente automatizado Tronix. Utiliza el campo inferior para enviar mensajes.")
 
+# 🚀 Dashboard comparativo Producción vs Proyección
+st.markdown("## 📊 Comparativa Producción vs Proyección - Teams")
+
+# 🔄 Cargar datos desde la vista
+@st.cache_data
+def cargar_datos():
+    supabase = get_client()
+    data = supabase.table("comparativa_produccion_teams").select("*").execute()
+    return pd.DataFrame(data.data)
+
+df = cargar_datos()
+
+# Normalizar nombres
+df["calidad"] = df["calidad"].str.upper().str.strip()
+df["team"] = df["team"].str.upper().str.strip()
+
+# 🟦 1. Volumen por TEAM
+st.subheader("Volumen Total por Team")
+graf1 = df.groupby("team")[["produccion_total", "volumen_proyectado"]].sum().reset_index()
+fig1 = px.bar(graf1, x="team", y=["produccion_total", "volumen_proyectado"], barmode="group")
+st.plotly_chart(fig1, use_container_width=True)
+
+# 📆 2. Volumen por FECHA
+st.subheader("Volumen Total por Fecha")
+graf2 = df.groupby("fecha")[["produccion_total", "volumen_proyectado"]].sum().reset_index()
+fig2 = px.line(graf2, x="fecha", y=["produccion_total", "volumen_proyectado"], markers=True)
+st.plotly_chart(fig2, use_container_width=True)
+
+# 🧪 3. Volumen por CALIDAD
+st.subheader("Volumen Total por Calidad")
+graf3 = df.groupby("calidad")[["produccion_total", "volumen_proyectado"]].sum().reset_index()
+fig3 = px.bar(graf3, x="calidad", y=["produccion_total", "volumen_proyectado"], barmode="group")
+st.plotly_chart(fig3, use_container_width=True)
+
+# 🔢 4. Resumen Total
+st.subheader("Resumen General")
+produccion = df["produccion_total"].sum()
+proyeccion = df["volumen_proyectado"].sum()
+diferencia = produccion - proyeccion
+st.metric("📦 Producción Total", f"{produccion:,.0f} m³")
+st.metric("📦 Proyección Total", f"{proyeccion:,.0f} m³")
+st.metric("📉 Diferencia", f"{diferencia:,.0f} m³")
 # 🔥 Dashboard predictivo integrado
 from supabase_client import get_client
 import plotly.express as px
