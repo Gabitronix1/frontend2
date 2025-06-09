@@ -23,18 +23,18 @@ if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
 st.title("🤖 Agente Tronix")
-st.markdown("Bienvenido al panel de interacción con tu agente automatizado Tronix. Utiliza el campo inferior para enviar mensajes.")
-
-# 🚀 Dashboard comparativo Producción vs Proyección
 from supabase_client import get_client
 import plotly.express as px
+st.markdown("Bienvenido al panel de interacción con tu agente automatizado Tronix. Utiliza el campo inferior para enviar mensajes.")
+
+# 🚀 Dashboard comparativo Producción vs Proyección - Teams
 st.markdown("## 📊 Comparativa Producción vs Proyección - Teams")
 
 # 🔄 Cargar datos desde la vista
 @st.cache_data
 def cargar_datos():
     supabase = get_client()
-    data = supabase.table("comparativa_produccion_teams").select("*").execute()
+    data = supabase.table("vista_comparativa_team_largo").select("*").execute()
     return pd.DataFrame(data.data)
 
 df = cargar_datos()
@@ -42,6 +42,13 @@ df = cargar_datos()
 # Normalizar nombres
 df["calidad"] = df["calidad"].str.upper().str.strip()
 df["team"] = df["team"].str.upper().str.strip()
+
+# Filtrar a partir de la fecha donde comienzan las proyecciones reales
+fecha_inicio = df[df["volumen_proyectado"] > 0]["fecha"].min()
+df = df[df["fecha"] >= fecha_inicio]
+
+# Mostrar fecha mínima
+st.info(f"📅 Mostrando datos desde el **{fecha_inicio}**, que es cuando comienzan las proyecciones.")
 
 # 🟦 1. Volumen por TEAM
 st.subheader("Volumen Total por Team")
@@ -69,6 +76,7 @@ diferencia = produccion - proyeccion
 st.metric("📦 Producción Total", f"{produccion:,.0f} m³")
 st.metric("📦 Proyección Total", f"{proyeccion:,.0f} m³")
 st.metric("📉 Diferencia", f"{diferencia:,.0f} m³")
+
 # 🔥 Dashboard predictivo integrado
 from supabase_client import get_client
 import plotly.express as px
