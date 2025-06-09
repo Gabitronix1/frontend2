@@ -106,112 +106,80 @@ else:
 
 # Función pro para mostrar cualquier respuesta
 def render_agent_response(resp):
+    import re
+    import pandas as pd
+
+    # 🟢 1. Si es lista → procesar cada item
+    if isinstance(resp, list):
+        rendered = ""
+        for item in resp:
+            rendered += render_agent_response(item) + "\n\n"
+        return rendered
+
+    # 🟢 2. Si es dict → procesar campos tipo text, table, image, output, etc.
+    if isinstance(resp, dict):
+        rendered = ""
+
+        # Soporta formato tipo [{"output": "..."}]
+        if "output" in resp:
+            return render_agent_response(resp["output"])
+
+        # Tabla
+        if "table" in resp and isinstance(resp["table"], (list, dict)):
+            try:
+                df = pd.DataFrame(resp["table"])
+                rendered += "#### Tabla de resultados\n"
+                rendered += df.to_markdown(index=False)
+            except Exception:
+                rendered += str(resp["table"])
+
+        # Imagen base64
+        elif "image" in resp:
+            try:
+                img = resp["image"]
+                if not img.startswith("data:image"):
+                    img = f"data:image/png;base64,{img}"
+                st.image(img)
+            except:
+                rendered += "(No se pudo renderizar imagen)"
+
+        # Texto plano
+        if "text" in resp:
+            rendered += f"\n\n{resp['text']}"
+
+        # Otros campos (fallback)
+        for k, v in resp.items():
+            if k not in {"table", "image", "text", "output"}:
+                rendered += f"\n**{k.capitalize()}:** {render_agent_response(v)}"
+
+        return rendered if rendered.strip() != "" else str(resp)
+
+    # 🟢 3. Si es string → buscar si tiene gráfico o links
     if isinstance(resp, str):
-        # 🔍 Busca link de grafico_id dentro de markdown tipo ![]()
-        import re
+        # ![](grafico_id=...)
         match = re.search(r"!\[.*?\]\((https://[^\s\)]+grafico_id=[^\s\)]+)\)", resp)
         if match:
             url = match.group(1).strip()
             return f'''<iframe src="{url}" height="620" width="100%" frameborder="0" allowfullscreen></iframe>'''
 
-        # 🔁 También detecta link plano
+        # URL directa con ?grafico_id=
         if resp.startswith("http") and "?grafico_id=" in resp:
             return f'''<iframe src="{resp.strip()}" height="620" width="100%" frameborder="0" allowfullscreen></iframe>'''
 
+        # Iframe directo (ej: Claude Sonnet 4)
+        if "<iframe" in resp and "</iframe>" in resp:
+            return resp
+
+        # Link plano
         if resp.startswith("http"):
             return f"[{resp}]({resp})"
 
+        # Texto simple
         return resp
 
-
-
-    # Lista
-    if isinstance(resp, list):
-        rendered = ""
-        for idx, item in enumerate(resp):
-            rendered += f"**{idx+1}.** {render_agent_response(item)}\n\n"
-        return rendered
-
-    # Diccionario
-    if isinstance(resp, dict):
-        rendered = ""
-        # Si trae tabla en formato estándar
-        if "table" in resp and isinstance(resp["table"], (list, dict)):
-            try:
-                df = pd.DataFrame(resp["table"])
-                rendered += "#### Tabla de resultados\n"
-                rendered += df.to_markdown(index=False)
-            except Exception:
-                rendered += str(resp["table"])
-        # Si trae imagen en base64
-        elif "image" in resp:
-            try:
-                img = resp["image"]
-                if not img.startswith("data:image"):
-                    img = f"data:image/png;base64,{img}"
-                st.image(img)
-                rendered += ""
-            except Exception:
-                rendered += "(No se pudo renderizar imagen)"
-        # Texto
-        if "text" in resp:
-            rendered += f"\n\n{resp['text']}"
-        # Otros campos
-        for k, v in resp.items():
-            if k not in {"table", "image", "text"}:
-                rendered += f"\n**{k.capitalize()}:** {render_agent_response(v)}"
-        if rendered.strip() == "":
-            rendered = str(resp)
-        return rendered
-
-    # Otros tipos
+    # 🟢 4. Otros tipos de datos
     return str(resp)
 
-
-
-
-
-    # Lista
-    if isinstance(resp, list):
-        rendered = ""
-        for idx, item in enumerate(resp):
-            rendered += f"**{idx+1}.** {render_agent_response(item)}\n\n"
-        return rendered
-
-    # Diccionario
-    if isinstance(resp, dict):
-        rendered = ""
-        # Si trae tabla en formato estándar
-        if "table" in resp and isinstance(resp["table"], (list, dict)):
-            try:
-                df = pd.DataFrame(resp["table"])
-                rendered += "#### Tabla de resultados\n"
-                rendered += df.to_markdown(index=False)
-            except Exception:
-                rendered += str(resp["table"])
-        # Si trae imagen en base64
-        elif "image" in resp:
-            try:
-                img = resp["image"]
-                if not img.startswith("data:image"):
-                    img = f"data:image/png;base64,{img}"
-                st.image(img)
-                rendered += ""
-            except Exception:
-                rendered += "(No se pudo renderizar imagen)"
-        # Texto
-        if "text" in resp:
-            rendered += f"\n\n{resp['text']}"
-        # Otros campos
-        for k, v in resp.items():
-            if k not in {"table", "image", "text"}:
-                rendered += f"\n**{k.capitalize()}:** {render_agent_response(v)}"
-        if rendered.strip() == "":
-            rendered = str(resp)
-        return rendered
-
-    # Otros tipos
-    return str(resp)
 
 # Mostrar historial de conversación
 for msg in st.session_state.chat_history:
