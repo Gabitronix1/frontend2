@@ -25,6 +25,33 @@ if "session_id" not in st.session_state:
 st.title("🤖 Agente Tronix")
 st.markdown("Bienvenido al panel de interacción con tu agente automatizado Tronix. Utiliza el campo inferior para enviar mensajes.")
 
+# 🔥 Dashboard predictivo integrado
+from supabase_client import get_client
+import plotly.express as px
+
+st.subheader("📊 Panel Predictivo Tronix")
+
+supabase = get_client()
+data = supabase.table("vista_comparativa_despachos").select("*").execute().data
+df = pd.DataFrame(data)
+
+if not df.empty:
+    volumen_planificado = df["volumen_planificado"].sum()
+    volumen_despachado = df["volumen_despachado"].sum()
+    diferencia = volumen_despachado - volumen_planificado
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("✅ Planificado (m³)", f"{volumen_planificado:,.0f}")
+    col2.metric("🚛 Despachado (m³)", f"{volumen_despachado:,.0f}")
+    col3.metric("📉 Diferencia", f"{diferencia:,.0f}")
+
+    df_zona = df.groupby("codigo_destino")[["volumen_planificado", "volumen_despachado"]].sum().reset_index()
+    fig = px.bar(df_zona, x="codigo_destino", y=["volumen_planificado", "volumen_despachado"],
+                 barmode="group", title="Volumen por Zona")
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.info("No hay datos para mostrar el panel.")
+
 # Función pro para mostrar cualquier respuesta
 def render_agent_response(resp):
     if isinstance(resp, str):
