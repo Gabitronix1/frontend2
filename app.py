@@ -49,7 +49,7 @@ if pagina == "🏠 Inicio":
     En el menú lateral izquierdo podrás acceder a los distintos dashboards que ofrece **Tronix**, organizados así:
 
     - **📊 Comparativa Producción vs Proyección - Teams**: Visualiza el desempeño de producción vs lo proyectado por equipo y calidad.
-    - **🚛 Panel Predictivo Despachos**: Compara los despachos reales contra lo planificado por destino, especie, largo y calidad.
+    - **🚛 Panel Despachos**: Compara los despachos reales contra lo planificado por destino, especie, largo y calidad.
     - **🪵 Stock por Predios y Calidad**: Monitorea el stock actual en los predios con filtros interactivos.
     - **💬 Chat con Tronix**: Pregúntale directamente al agente IA usando lenguaje natural.
 
@@ -128,7 +128,7 @@ if pagina == "📊 Comparativa Producción vs Proyección - Teams":
     @st.cache_data
     def cargar_datos():
         supabase = get_client()
-        data = supabase.table("vista_comparativa_team_largo").select("*").execute()
+        data = supabase.table("comparativa_produccion_teams").select("*").execute()
         return pd.DataFrame(data.data)
 
     df = cargar_datos()
@@ -300,8 +300,8 @@ if pagina == "🚛 Panel Despachos":
     fig5 = px.bar(graf5, x="codigo_destino", y=["volumen_planificado", "volumen_despachado"], barmode="group")
     st.plotly_chart(fig5, use_container_width=True)
 
-if pagina == "🚛 Panel Predictivo Despachos":
-    st.title("📊 Panel Predictivo Tronix")
+if pagina == "🚛 Panel Despachos":
+    st.title("🚛 Panel Despachos)
     supabase = get_client()
     data = supabase.table("comparativa_despachos").select("*").execute().data
     df = pd.DataFrame(data)
