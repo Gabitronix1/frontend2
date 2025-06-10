@@ -103,6 +103,61 @@ if not df.empty:
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("No hay datos para mostrar el panel.")
+# 🚨 Dashboard de Stock por Predios - Interactivo
+st.markdown("## 🪵 Dashboard de Stock en Predios por Zona, Calidad y Largo")
+
+@st.cache_data
+def cargar_stock_predios():
+    data = supabase.table("vista_dashboard_stock_predios_detallado").select("*").execute().data
+    return pd.DataFrame(data)
+
+df_stock = cargar_stock_predios()
+df_stock["volumen_total"] = pd.to_numeric(df_stock["volumen_total"], errors="coerce")
+df_stock["fecha_stock"] = pd.to_datetime(df_stock["fecha_stock"])
+
+# Filtros
+st.sidebar.markdown("### 📅 Filtros de Stock")
+zona_filtro = st.sidebar.multiselect("Zona", options=df_stock["zona"].unique(), default=list(df_stock["zona"].unique()))
+calidad_filtro = st.sidebar.multiselect("Calidad", options=df_stock["calidad"].unique(), default=list(df_stock["calidad"].unique()))
+fecha_filtro = st.sidebar.date_input("Fecha stock", value=df_stock["fecha_stock"].max())
+
+df_filtrado = df_stock[
+    (df_stock["zona"].isin(zona_filtro)) &
+    (df_stock["calidad"].isin(calidad_filtro)) &
+    (df_stock["fecha_stock"] == pd.to_datetime(fecha_filtro))
+]
+
+# 🔹 1. Stock total por zona
+st.subheader("🔹 Stock total por Zona")
+fig1 = px.bar(df_filtrado.groupby("zona", as_index=False)["volumen_total"].sum(),
+              x="zona", y="volumen_total", title="Volumen total por zona")
+st.plotly_chart(fig1, use_container_width=True)
+
+# 🔹 2. Stock por calidad en cada zona
+st.subheader("🔹 Stock por Calidad en cada Zona")
+fig2 = px.bar(df_filtrado, x="zona", y="volumen_total", color="calidad",
+              barmode="group", title="Volumen por calidad y zona")
+st.plotly_chart(fig2, use_container_width=True)
+
+# 🔹 3. Distribución de largos por calidad
+st.subheader("🔹 Distribución de Largos por Calidad")
+fig3 = px.histogram(df_filtrado, x="largo", color="calidad", barmode="group",
+                    title="Frecuencia de largos por calidad")
+st.plotly_chart(fig3, use_container_width=True)
+
+# 🔹 4. Stock total por predio
+st.subheader("🔹 Stock total por Predio")
+fig4 = px.bar(df_filtrado.groupby("nombre_origen", as_index=False)["volumen_total"].sum().sort_values(by="volumen_total", ascending=False),
+              x="nombre_origen", y="volumen_total", title="Stock total por predio")
+st.plotly_chart(fig4, use_container_width=True)
+
+# 🔹 5. Mapa de calor zona vs largo
+st.subheader("🔹 Mapa de Calor: Zona vs Largo")
+heatmap = df_filtrado.groupby(["zona", "largo"], as_index=False)["volumen_total"].sum()
+fig5 = px.density_heatmap(heatmap, x="zona", y="largo", z="volumen_total", color_continuous_scale="Viridis",
+                          title="Volumen por zona y largo")
+st.plotly_chart(fig5, use_container_width=True)
+
 
 # Función pro para mostrar cualquier respuesta
 def render_agent_response(resp):
