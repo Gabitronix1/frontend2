@@ -22,13 +22,17 @@ if "chat_history" not in st.session_state:
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
-st.title("🤖 Agente Tronix")
+tab1, tab2, tab3 = st.tabs(["🤖 Agente Tronix", "📊 Comparativa Producción vs Proyección - Teams", "🚛 Comparativa despachos vs planificado"])
+
+with tab1:
+    st.title("🤖 Agente Tronix")
 from supabase_client import get_client
 import plotly.express as px
 st.markdown("Bienvenido al panel de interacción con tu agente automatizado Tronix. Utiliza el campo inferior para enviar mensajes.")
 
 # 🚀 Dashboard comparativo Producción vs Proyección - Teams
-st.markdown("## 📊 Comparativa Producción vs Proyección - Teams")
+with tab2:
+    st.markdown("## 📊 Comparativa Producción vs Proyección - Teams")
 
 # 🔄 Cargar datos desde la vista
 @st.cache_data
@@ -81,7 +85,8 @@ st.metric("📉 Diferencia", f"{diferencia:,.0f} m³")
 from supabase_client import get_client
 import plotly.express as px
 
-st.subheader("📊 Panel Predictivo Tronix")
+with tab3:
+    st.subheader("🚛 Comparativa despachos vs planificado")
 
 supabase = get_client()
 data = supabase.table("comparativa_despachos").select("*").execute().data
@@ -210,6 +215,10 @@ if prompt:
 # Panel lateral con opciones
 st.sidebar.title("Opciones")
 if st.sidebar.button("🔄 Reiniciar conversación"):
+    st.session_state.chat_history = []
+    st.session_state.session_id = str(uuid.uuid4())
+    st.experimental_rerun()
+
     st.session_state.chat_history = []
     st.session_state.session_id = str(uuid.uuid4())
     st.experimental_rerun()
