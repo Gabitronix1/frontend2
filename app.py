@@ -256,7 +256,7 @@ if pagina == "🚛 Panel Despachos":
         (df["codigo_destino"].isin(zona_sel)) &
         (df["especie"].isin(especie_sel)) &
         (df["calidad"].isin(calidad_sel)) &
-        (df["largo"].isin(largo_sel)) &
+        (df["largo"].isin(largo_sel))
     ]
 
     # Métricas generales
