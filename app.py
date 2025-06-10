@@ -37,9 +37,28 @@ pagina = st.sidebar.selectbox(
 )
 
 # =============== INICIO ===============
+
 if pagina == "🏠 Inicio":
+    st.title("🌲 Bienvenido al Portal de Tronix - Forestal Arauco")
+    st.markdown("### 🤖 Inteligencia para el manejo y monitoreo de producción forestal")
+    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Arauco_logo.svg/2560px-Arauco_logo.svg.png", width=250)
+
+    st.markdown("""
+    ---
+    #### 📋 ¿Cómo usar este panel?
+    En el menú lateral izquierdo podrás acceder a los distintos dashboards que ofrece **Tronix**, organizados así:
+
+    - **📊 Comparativa Producción vs Proyección - Teams**: Visualiza el desempeño de producción vs lo proyectado por equipo y calidad.
+    - **🚛 Panel Predictivo Despachos**: Compara los despachos reales contra lo planificado por destino, especie, largo y calidad.
+    - **🪵 Stock por Predios y Calidad**: Monitorea el stock actual en los predios con filtros interactivos.
+    - **💬 Chat con Tronix**: Pregúntale directamente al agente IA usando lenguaje natural.
+
+    ---
+    """, unsafe_allow_html=True)
+
     st.title("🤖 Agente Tronix")
     st.markdown("Bienvenido al panel de interacción con tu agente automatizado Tronix.")
+
 
 
 # =============== DASHBOARD 1 ===============
@@ -50,6 +69,66 @@ if pagina == "📊 Comparativa Producción vs Proyección - Teams":
     def cargar_datos():
         supabase = get_client()
         data = supabase.table("comparativa_produccion_teams").select("*").execute()
+        return pd.DataFrame(data.data)
+
+    df = cargar_datos()
+    df["fecha"] = pd.to_datetime(df["fecha"])
+    df["calidad"] = df["calidad"].str.upper().str.strip()
+    df["zona"] = df["zona"].str.upper().str.strip()
+
+    # Filtrar desde la primera fecha con volumen proyectado > 0
+    fecha_inicio = df[df["volumen_proyectado"] > 0]["fecha"].min()
+    df = df[df["fecha"] >= fecha_inicio]
+
+    # Filtros
+    st.sidebar.markdown("### 🎛️ Filtros Comparativa")
+    calidades = sorted(df["calidad"].dropna().unique())
+    zonas = sorted(df["zona"].dropna().unique())
+    fechas = sorted(df["fecha"].dropna().unique())
+
+    calidad_sel = st.sidebar.multiselect("Calidad", options=calidades, default=calidades)
+    zona_sel = st.sidebar.multiselect("Zona", options=zonas, default=zonas)
+    fecha_sel = st.sidebar.date_input("Días", value=[fechas[0], fechas[-1]])
+
+    df = df[
+        (df["calidad"].isin(calidad_sel)) &
+        (df["zona"].isin(zona_sel)) &
+        (df["fecha"] >= pd.to_datetime(fecha_sel[0])) &
+        (df["fecha"] <= pd.to_datetime(fecha_sel[1]))
+    ]
+
+    # Resumen general
+    produccion = df["produccion_total"].sum()
+    proyeccion = df["volumen_proyectado"].sum()
+    diferencia = produccion - proyeccion
+    col1, col2, col3 = st.columns(3)
+    col1.metric("📦 Producción Total", f"{produccion:,.0f} m³")
+    col2.metric("🧮 Proyección Total", f"{proyeccion:,.0f} m³")
+    col3.metric("📉 Diferencia", f"{diferencia:,.0f} m³")
+
+    # Gráficos
+    st.subheader("Volumen Total por Team")
+    graf1 = df.groupby("team")[["produccion_total", "volumen_proyectado"]].sum().reset_index()
+    fig1 = px.bar(graf1, x="team", y=["produccion_total", "volumen_proyectado"], barmode="group")
+    st.plotly_chart(fig1, use_container_width=True)
+
+    st.subheader("Volumen Total por Fecha")
+    graf2 = df.groupby("fecha")[["produccion_total", "volumen_proyectado"]].sum().reset_index()
+    fig2 = px.line(graf2, x="fecha", y=["produccion_total", "volumen_proyectado"], markers=True)
+    st.plotly_chart(fig2, use_container_width=True)
+
+    st.subheader("Volumen Total por Calidad")
+    graf3 = df.groupby("calidad")[["produccion_total", "volumen_proyectado"]].sum().reset_index()
+    fig3 = px.bar(graf3, x="calidad", y=["produccion_total", "volumen_proyectado"], barmode="group")
+    st.plotly_chart(fig3, use_container_width=True)
+
+if pagina == "📊 Comparativa Producción vs Proyección - Teams":
+    st.title("📊 Comparativa Producción vs Proyección - Teams")
+
+    @st.cache_data
+    def cargar_datos():
+        supabase = get_client()
+        data = supabase.table("vista_comparativa_team_largo").select("*").execute()
         return pd.DataFrame(data.data)
 
     df = cargar_datos()
@@ -171,7 +250,7 @@ if pagina == "🚛 Panel Despachos":
     especie_sel = st.sidebar.multiselect("Especie", options=especies, default=especies)
     calidad_sel = st.sidebar.multiselect("Calidad", options=calidades, default=calidades)
     largo_sel = st.sidebar.multiselect("Largo", options=largos, default=largos)
-    fecha_sel = st.sidebar.multiselect("Mes", options=fechas, default=fechas)
+    fecha_sel = # (Filtro por mes eliminado)
 
     df_filtrado = df[
         (df["codigo_destino"].isin(zona_sel)) &
@@ -192,7 +271,7 @@ if pagina == "🚛 Panel Despachos":
     col3.metric("📉 Diferencia", f"{diferencia:,.0f}")
 
     # Gráfico 1: Evolución mensual
-    st.subheader("📈 Evolución Mensual de Despachos")
+    # (Gráfico de evolución mensual eliminado)
     graf1 = df_filtrado.groupby("fecha")[["volumen_planificado", "volumen_despachado"]].sum().reset_index()
     fig1 = px.line(graf1, x="fecha", y=["volumen_planificado", "volumen_despachado"], markers=True)
     st.plotly_chart(fig1, use_container_width=True)
@@ -276,11 +355,15 @@ if pagina == "🪵 Stock por Predios y Calidad":
     fig4 = px.bar(df_filtrado.groupby("nombre_origen", as_index=False)["volumen_total"].sum().sort_values(by="volumen_total", ascending=False),
                   x="nombre_origen", y="volumen_total", title="Stock total por predio")
     st.plotly_chart(fig4, use_container_width=True)
-    st.subheader("🔹 Mapa de Calor: Zona vs Largo")
-    heatmap = df_filtrado.groupby(["zona", "largo"], as_index=False)["volumen_total"].sum()
-    fig5 = px.density_heatmap(heatmap, x="zona", y="largo", z="volumen_total", color_continuous_scale="Viridis",
-                              title="Volumen por zona y largo")
-    st.plotly_chart(fig5, use_container_width=True)
+    # Resumen general
+    vol_total = df_filtrado["volumen_total"].sum()
+    predios_unicos = df_filtrado["nombre_origen"].nunique()
+    largo_unico = df_filtrado["largo"].nunique()
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("📦 Volumen Total", f"{vol_total:,.0f} m³")
+    col2.metric("🌲 Predios únicos", predios_unicos)
+    col3.metric("📏 Largos únicos", largo_unico)
 
 # =============== CHAT ===============
 if pagina == "💬 Chat con Tronix":
@@ -359,3 +442,4 @@ if pagina == "💬 Chat con Tronix":
         st.session_state.chat_history = []
         st.session_state.session_id = str(uuid.uuid4())
         st.experimental_rerun()
+
