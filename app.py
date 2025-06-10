@@ -244,7 +244,7 @@ if pagina == "🚛 Panel Despachos":
     especies = sorted(df["especie"].dropna().unique())
     calidades = sorted(df["calidad"].dropna().unique())
     largos = sorted(df["largo"].dropna().unique())
-    fechas = sorted(df["fecha"].dropna().unique())
+    
 
     zona_sel = st.sidebar.multiselect("Destino", options=zonas, default=zonas)
     especie_sel = st.sidebar.multiselect("Especie", options=especies, default=especies)
@@ -257,7 +257,6 @@ if pagina == "🚛 Panel Despachos":
         (df["especie"].isin(especie_sel)) &
         (df["calidad"].isin(calidad_sel)) &
         (df["largo"].isin(largo_sel)) &
-        (df["fecha"].isin(fecha_sel))
     ]
 
     # Métricas generales
