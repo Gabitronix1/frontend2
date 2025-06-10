@@ -155,7 +155,7 @@ elif modo == "📊 Comparativa Producción vs Teams":
     st.markdown("Visualización interactiva con filtros…")
 
     components.iframe(
-        src="https://graficos2-production.up.railway.app/comparativa_produccion_teams",
+        src="https://graficos2-production.up.railway.app/?view=comparativa",
         height=760, width=1200
     )
 
