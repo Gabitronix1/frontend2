@@ -1,5 +1,4 @@
 
-
 import streamlit as st
 import requests
 import uuid
@@ -42,7 +41,76 @@ if pagina == "🏠 Inicio":
     st.title("🤖 Agente Tronix")
     st.markdown("Bienvenido al panel de interacción con tu agente automatizado Tronix.")
 
+
 # =============== DASHBOARD 1 ===============
+if pagina == "📊 Comparativa Producción vs Proyección - Teams":
+    st.title("📊 Comparativa Producción vs Proyección - Teams")
+
+    @st.cache_data
+    def cargar_datos():
+        supabase = get_client()
+        data = supabase.table("comparativa_produccion_teams").select("*").execute()
+        return pd.DataFrame(data.data)
+
+    df = cargar_datos()
+
+    df["fecha"] = pd.to_datetime(df["fecha"])
+    df["team"] = df["team"].str.upper().str.strip()
+    df["calidad"] = df["calidad"].str.upper().str.strip()
+    df["zona"] = df["zona"].str.upper().str.strip()
+    df["nombre_origen"] = df["nombre_origen"].str.upper().str.strip()
+
+    # Filtros
+    st.sidebar.markdown("### 🎛️ Filtros Comparativa Team")
+    teams = sorted(df["team"].dropna().unique())
+    calidades = sorted(df["calidad"].dropna().unique())
+    zonas = sorted(df["zona"].dropna().unique())
+    predios = sorted(df["nombre_origen"].dropna().unique())
+    fechas = sorted(df["fecha"].dropna().unique())
+
+    team_sel = st.sidebar.multiselect("Team", options=teams, default=teams)
+    calidad_sel = st.sidebar.multiselect("Calidad", options=calidades, default=calidades)
+    zona_sel = st.sidebar.multiselect("Zona", options=zonas, default=zonas)
+    predio_sel = st.sidebar.multiselect("Predio", options=predios, default=predios)
+    fecha_sel = st.sidebar.multiselect("Fecha", options=fechas, default=fechas)
+
+    df = df[
+        (df["team"].isin(team_sel)) &
+        (df["calidad"].isin(calidad_sel)) &
+        (df["zona"].isin(zona_sel)) &
+        (df["nombre_origen"].isin(predio_sel)) &
+        (df["fecha"].isin(fecha_sel))
+    ]
+
+    st.info(f"📅 Mostrando datos desde el **{df['fecha'].min().date()}** hasta **{df['fecha'].max().date()}**")
+
+    # 1. Volumen por Team
+    st.subheader("Volumen Total por Team")
+    graf1 = df.groupby("team")[["produccion_total", "volumen_proyectado"]].sum().reset_index()
+    fig1 = px.bar(graf1, x="team", y=["produccion_total", "volumen_proyectado"], barmode="group")
+    st.plotly_chart(fig1, use_container_width=True)
+
+    # 2. Volumen por Fecha
+    st.subheader("Volumen Total por Fecha")
+    graf2 = df.groupby("fecha")[["produccion_total", "volumen_proyectado"]].sum().reset_index()
+    fig2 = px.line(graf2, x="fecha", y=["produccion_total", "volumen_proyectado"], markers=True)
+    st.plotly_chart(fig2, use_container_width=True)
+
+    # 3. Volumen por Calidad
+    st.subheader("Volumen Total por Calidad")
+    graf3 = df.groupby("calidad")[["produccion_total", "volumen_proyectado"]].sum().reset_index()
+    fig3 = px.bar(graf3, x="calidad", y=["produccion_total", "volumen_proyectado"], barmode="group")
+    st.plotly_chart(fig3, use_container_width=True)
+
+    # 4. Resumen Total
+    st.subheader("Resumen General")
+    produccion = df["produccion_total"].sum()
+    proyeccion = df["volumen_proyectado"].sum()
+    diferencia = produccion - proyeccion
+    st.metric("📦 Producción Total", f"{produccion:,.0f} m³")
+    st.metric("📦 Proyección Total", f"{proyeccion:,.0f} m³")
+    st.metric("📉 Diferencia", f"{diferencia:,.0f} m³")
+
 if pagina == "📊 Comparativa Producción vs Proyección - Teams":
     st.title("📊 Comparativa Producción vs Proyección - Teams")
     @st.cache_data
