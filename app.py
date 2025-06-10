@@ -223,7 +223,7 @@ if pagina == "📊 Comparativa Producción vs Proyección - Teams":
 
 # =============== DASHBOARD 2 ===============
 if pagina == "🚛 Panel Despachos":
-    st.title("📊 Panel Despachos")
+    st.title("🚛 Panel Despachos")
 
     @st.cache_data
     def cargar_despachos():
@@ -301,7 +301,7 @@ if pagina == "🚛 Panel Despachos":
     st.plotly_chart(fig5, use_container_width=True)
 
 if pagina == "🚛 Panel Despachos":
-    st.title("🚛 Panel Despachos)
+    st.title("🚛 Panel Despachos")
     supabase = get_client()
     data = supabase.table("comparativa_despachos").select("*").execute().data
     df = pd.DataFrame(data)
