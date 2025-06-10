@@ -31,7 +31,7 @@ pagina = st.sidebar.selectbox(
     [
         "🏠 Inicio",
         "📊 Comparativa Producción vs Proyección - Teams",
-        "🚛 Panel Predictivo Despachos",
+        "🚛 Panel Despachos",
         "🪵 Stock por Predios y Calidad",
         "💬 Chat con Tronix"
     ]
@@ -75,12 +75,12 @@ if pagina == "📊 Comparativa Producción vs Proyección - Teams":
 
 
 # =============== DASHBOARD 2 ===============
-if pagina == "🚛 Panel  Despachos":
-    st.title("📊 Panel  Despachos")
+if pagina == "🚛 Panel Despachos":
+    st.title("📊 Panel Despachos")
 
     @st.cache_data
     def cargar_despachos():
-        data = get_client().table("vista_comparativa_despachos").select("*").execute().data
+        data = get_client().table("comparativa_despachos").select("*").execute().data
         return pd.DataFrame(data)
 
     df = cargar_despachos()
