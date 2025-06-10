@@ -1,4 +1,5 @@
 
+
 import streamlit as st
 import requests
 import uuid
@@ -72,7 +73,86 @@ if pagina == "📊 Comparativa Producción vs Proyección - Teams":
     st.metric("📦 Proyección Total", f"{df['volumen_proyectado'].sum():,.0f} m³")
     st.metric("📉 Diferencia", f"{df['produccion_total'].sum() - df['volumen_proyectado'].sum():,.0f} m³")
 
+
 # =============== DASHBOARD 2 ===============
+if pagina == "🚛 Panel  Despachos":
+    st.title("📊 Panel  Despachos")
+
+    @st.cache_data
+    def cargar_despachos():
+        data = get_client().table("vista_comparativa_despachos").select("*").execute().data
+        return pd.DataFrame(data)
+
+    df = cargar_despachos()
+    df["anio"] = pd.to_numeric(df["anio"], errors="coerce")
+    df["mes"] = pd.to_numeric(df["mes"], errors="coerce")
+    df["volumen_planificado"] = pd.to_numeric(df["volumen_planificado"], errors="coerce")
+    df["volumen_despachado"] = pd.to_numeric(df["volumen_despachado"], errors="coerce")
+    df["diferencia_volumen"] = pd.to_numeric(df["diferencia_volumen"], errors="coerce")
+    df["fecha"] = pd.to_datetime(dict(year=df["anio"], month=df["mes"], day=1))
+
+    # Filtros interactivos
+    st.sidebar.markdown("### 🎛️ Filtros de Despachos")
+    zonas = sorted(df["codigo_destino"].dropna().unique())
+    especies = sorted(df["especie"].dropna().unique())
+    calidades = sorted(df["calidad"].dropna().unique())
+    largos = sorted(df["largo"].dropna().unique())
+    fechas = sorted(df["fecha"].dropna().unique())
+
+    zona_sel = st.sidebar.multiselect("Destino", options=zonas, default=zonas)
+    especie_sel = st.sidebar.multiselect("Especie", options=especies, default=especies)
+    calidad_sel = st.sidebar.multiselect("Calidad", options=calidades, default=calidades)
+    largo_sel = st.sidebar.multiselect("Largo", options=largos, default=largos)
+    fecha_sel = st.sidebar.multiselect("Mes", options=fechas, default=fechas)
+
+    df_filtrado = df[
+        (df["codigo_destino"].isin(zona_sel)) &
+        (df["especie"].isin(especie_sel)) &
+        (df["calidad"].isin(calidad_sel)) &
+        (df["largo"].isin(largo_sel)) &
+        (df["fecha"].isin(fecha_sel))
+    ]
+
+    # Métricas generales
+    volumen_planificado = df_filtrado["volumen_planificado"].sum()
+    volumen_despachado = df_filtrado["volumen_despachado"].sum()
+    diferencia = volumen_despachado - volumen_planificado
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("✅ Planificado (m³)", f"{volumen_planificado:,.0f}")
+    col2.metric("🚛 Despachado (m³)", f"{volumen_despachado:,.0f}")
+    col3.metric("📉 Diferencia", f"{diferencia:,.0f}")
+
+    # Gráfico 1: Evolución mensual
+    st.subheader("📈 Evolución Mensual de Despachos")
+    graf1 = df_filtrado.groupby("fecha")[["volumen_planificado", "volumen_despachado"]].sum().reset_index()
+    fig1 = px.line(graf1, x="fecha", y=["volumen_planificado", "volumen_despachado"], markers=True)
+    st.plotly_chart(fig1, use_container_width=True)
+
+    # Gráfico 2: Por especie
+    st.subheader("🌲 Comparativa por Especie")
+    graf2 = df_filtrado.groupby("especie")[["volumen_planificado", "volumen_despachado"]].sum().reset_index()
+    fig2 = px.bar(graf2, x="especie", y=["volumen_planificado", "volumen_despachado"], barmode="group")
+    st.plotly_chart(fig2, use_container_width=True)
+
+    # Gráfico 3: Por largo
+    st.subheader("📏 Comparativa por Largo")
+    graf3 = df_filtrado.groupby("largo")[["volumen_planificado", "volumen_despachado"]].sum().reset_index()
+    fig3 = px.bar(graf3, x="largo", y=["volumen_planificado", "volumen_despachado"], barmode="group")
+    st.plotly_chart(fig3, use_container_width=True)
+
+    # Gráfico 4: Por calidad
+    st.subheader("🏷️ Comparativa por Calidad")
+    graf4 = df_filtrado.groupby("calidad")[["volumen_planificado", "volumen_despachado"]].sum().reset_index()
+    fig4 = px.bar(graf4, x="calidad", y=["volumen_planificado", "volumen_despachado"], barmode="group")
+    st.plotly_chart(fig4, use_container_width=True)
+
+    # Gráfico 5: Por destino
+    st.subheader("🌍 Comparativa por Destino")
+    graf5 = df_filtrado.groupby("codigo_destino")[["volumen_planificado", "volumen_despachado"]].sum().reset_index()
+    fig5 = px.bar(graf5, x="codigo_destino", y=["volumen_planificado", "volumen_despachado"], barmode="group")
+    st.plotly_chart(fig5, use_container_width=True)
+
 if pagina == "🚛 Panel Predictivo Despachos":
     st.title("📊 Panel Predictivo Tronix")
     supabase = get_client()
@@ -211,4 +291,3 @@ if pagina == "💬 Chat con Tronix":
         st.session_state.chat_history = []
         st.session_state.session_id = str(uuid.uuid4())
         st.experimental_rerun()
-
