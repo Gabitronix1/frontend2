@@ -250,7 +250,7 @@ if pagina == "🚛 Panel Despachos":
     especie_sel = st.sidebar.multiselect("Especie", options=especies, default=especies)
     calidad_sel = st.sidebar.multiselect("Calidad", options=calidades, default=calidades)
     largo_sel = st.sidebar.multiselect("Largo", options=largos, default=largos)
-    fecha_sel = # (Filtro por mes eliminado)
+    
 
     df_filtrado = df[
         (df["codigo_destino"].isin(zona_sel)) &
