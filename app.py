@@ -152,11 +152,37 @@ if modo == "Agente Tronix":
 
 elif modo == "📊 Comparativa Producción vs Teams":
     st.title("📊 Comparativa Producción vs Teams")
-    st.markdown("Visualización interactiva con filtros, ideal para análisis detallado por Team.")
+    st.markdown("Visualización interactiva con filtros…")
 
     components.iframe(
         src="https://graficos2-production.up.railway.app/comparativa_produccion_teams",
-        height=800,
-        width=1200
+        height=760, width=1200
     )
+
+    st.markdown("---")
+    st.subheader("💬 Pregúntale a Tronix sobre este gráfico")
+
+    # Capturamos la selección de filtros (de tu propio código)
+    # Por ejemplo asumimos que tienes zona_sel, fecha_sel, calidad_sel definidos
+    pregunta = st.text_input(
+        "¿Qué quieres saber?",
+        placeholder="Escribe algo como: '¿Qué pasa si aumentan los despachos un 25%?'"
+    )
+
+    if st.button("Enviar a Tronix"):
+        # Construimos el prompt con contexto
+        prompt = (
+            f"Basado en la comparativa de Producción vs Proyección para "
+            f"zona {zona_sel}, calidad {calidad_sel} y fecha {fecha_sel}, "
+            f"responde: {pregunta}"
+        )
+        with st.spinner("Consultando a Tronix…"):
+            res = requests.post(
+                "https://n8n-production-993e.up.railway.app/webhook/01103618-3424-4455-bde6-aa8d295157b2",
+                json={"message": prompt, "sessionId": st.session_state.session_id}
+            )
+            data = res.json()
+            # Asumiendo que tu render_agent_response sigue disponible
+            st.markdown(render_agent_response(data.get("response", data)), unsafe_allow_html=True)
+
 
