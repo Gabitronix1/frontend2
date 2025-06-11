@@ -213,8 +213,10 @@ if pagina == '🪵 Stock por Predios y Calidad':
     st.plotly_chart(fig1, use_container_width=True)
 
     st.subheader('🔹 Stock por Calidad')
-    fig2 = px.bar(df_filtrado, x='zona', y='volumen_total', color='calidad', barmode='group')
+    df_graf = df_filtrado.groupby(['zona', 'calidad'], as_index=False)['volumen_total'].sum()
+    fig2 = px.bar(df_graf, x='zona', y='volumen_total', color='calidad', barmode='stack')
     st.plotly_chart(fig2, use_container_width=True)
+
 
     st.subheader('🔹 Distribución de Largos')
     fig3 = px.histogram(df_filtrado, x='largo', color='calidad', barmode='group')
