@@ -191,8 +191,8 @@ if pagina == '🪵 Stock por Predios y Calidad':
     df_stock['fecha_stock'] = pd.to_datetime(df_stock['fecha_stock'])
 
     def filtros_stock():
-        zonas = sorted(df_stock['zona'].unique())
-        calidades = sorted(df_stock['calidad'].unique())
+        zonas = sorted(df_stock['zona'].dropna().unique())
+        calidades = sorted(df_stock['calidad'].dropna().unique())
         fecha_def = df_stock['fecha_stock'].max()
         zona_sel = st.multiselect('Zona', options=zonas, default=zonas, key='sto_z')
         calidad_sel = st.multiselect('Calidad', options=calidades, default=calidades, key='sto_c')
@@ -203,7 +203,9 @@ if pagina == '🪵 Stock por Predios y Calidad':
     if res:
         zona_filtrado, calidad_filtrado, fecha_filtrado = res
     else:
-        zona_filtrado, calidad_filtrado, fecha_filtrado = df_stock['zona'].unique(), df_stock['calidad'].unique(), df_stock['fecha_stock'].max()
+        zona_filtrado = df_stock['zona'].dropna().unique()
+        calidad_filtrado = df_stock['calidad'].dropna().unique()
+        fecha_filtrado = df_stock['fecha_stock'].max()
     df_filtrado = df_stock[(df_stock['zona'].isin(zona_filtrado)) & (df_stock['calidad'].isin(calidad_filtrado)) & (df_stock['fecha_stock'] == pd.to_datetime(fecha_filtrado))]
 
     st.subheader('🔹 Stock total por Zona')
